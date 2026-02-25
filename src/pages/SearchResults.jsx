@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useMockData } from '../context/MockDataContext';
 import { useAuth } from '../context/AuthContext';
 import BusinessCard from '../components/BusinessCard';
-import { FiSearch, FiFilter, FiAlertCircle } from 'react-icons/fi';
+import { FiSearch, FiAlertCircle } from 'react-icons/fi';
 
 const SearchResults = () => {
   const location = useLocation();

@@ -39,7 +39,7 @@ const RegisterPage = () => {
         } else if (role === 'resident' && email.includes('owner')) {
             setEmail('newresident@email.com');
         }
-    }, [role]);
+    }, [role, email]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
