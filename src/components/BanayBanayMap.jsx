@@ -55,18 +55,6 @@ const userLocationIcon = L.divIcon({
     iconAnchor: [8, 8],
 });
 
-// Map bounds fitter component
-const FitBounds = ({ markers }) => {
-    const map = useMap();
-    React.useEffect(() => {
-        if (markers && markers.length > 0) {
-            const bounds = L.latLngBounds(markers.map(m => m.position));
-            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
-        }
-    }, [markers, map]);
-    return null;
-};
-
 /**
  * Reusable OpenStreetMap component centered on Banay-Banay, Cabuyao
  *
