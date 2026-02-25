@@ -3,6 +3,7 @@ import './styles/design-system.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { MockDataProvider } from './context/MockDataContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -87,13 +88,15 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <MockDataProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </MockDataProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <MockDataProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </MockDataProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

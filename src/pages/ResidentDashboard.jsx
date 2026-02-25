@@ -20,7 +20,6 @@ const ResidentDashboard = () => {
     }
   };
 
-  // Sort businesses by distance from the resident
   const nearestBusinesses = [...businesses]
     .filter(b => b.isActive)
     .sort((a, b) => {
@@ -28,84 +27,144 @@ const ResidentDashboard = () => {
       const distB = parseFloat(calculateDistance(user.location, b.coordinates));
       return distA - distB;
     })
-    .slice(0, 5); // top 5
+    .slice(0, 5);
 
-  // Sorted by newest (mock created date)
   const newestBusinesses = [...businesses]
     .filter(b => b.isActive)
     .sort((a, b) => new Date(b.stats.created) - new Date(a.stats.created))
     .slice(0, 5);
 
   return (
-    <div className="container py-6 relative">
-      <div className="bg-primary text-white p-6 rounded-2xl mb-8 mt-4 shadow-lg flex-col gap-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>
-        <h2 className="text-2xl font-bold z-10 relative">Hello, {user.name.split(' ')[0]} 👋</h2>
-        <p className="z-10 relative opacity-90">What service are you looking for today in Banay-Banay?</p>
+    <div style={{ paddingBottom: '1rem' }}>
+      {/* Hero / Search Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--primary-dark), var(--primary), #0D9488)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '2rem 1.5rem',
+        marginBottom: '2rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Decorative orbs */}
+        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }}></div>
+        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }}></div>
 
-        <form onSubmit={handleSearch} className="z-10 relative mt-4">
-          <div className="relative flex items-center shadow-lg rounded-full w-full max-w-xl">
-            <span className="absolute left-4 text-muted text-xl"><FiSearch /></span>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginBottom: '4px', position: 'relative', zIndex: 1 }}>
+          Hello, {user.name.split(' ')[0]} 👋
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1.25rem', position: 'relative', zIndex: 1 }}>
+          What service are you looking for today?
+        </p>
+
+        <form onSubmit={handleSearch} style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted)', fontSize: '1.1rem', display: 'flex' }}>
+              <FiSearch />
+            </span>
             <input
               type="text"
-              className="w-full py-4 pl-12 pr-6 rounded-full border-none focus:outline-none focus:ring-4 focus:ring-white/30 text-primary font-medium"
               placeholder="e.g., Vulcanizing, Sari-Sari, Laundry"
-              style={{ color: 'var(--text-primary)' }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 90px 12px 42px',
+                borderRadius: '9999px',
+                border: '1px solid var(--hero-search-border)',
+                background: 'var(--hero-search-bg)',
+                color: 'var(--text-primary)',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit',
+                backdropFilter: 'blur(8px)',
+                outline: 'none'
+              }}
             />
-            <button type="submit" className="absolute right-2 btn btn-primary py-2 px-4 rounded-full text-sm">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ position: 'absolute', right: '4px', padding: '8px 16px', fontSize: '0.8rem', borderRadius: '9999px' }}
+            >
               Search
             </button>
           </div>
         </form>
-
-        {/* Decorative background shapes */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-10 rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
       </div>
 
-      <section className="mb-10">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">Categories</h3>
-          <Link to="/search" className="text-sm font-semibold text-primary flex items-center gap-1">View All <FiArrowRight /></Link>
+      {/* Categories */}
+      <section style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Categories</h3>
+          <Link to="/search" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            View All <FiArrowRight />
+          </Link>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-4 pt-2 -mx-4 px-4 snap-x" style={{ scrollbarWidth: 'none' }}>
+        <div style={{
+          display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px',
+          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
+        }}>
           {categories.map(c => (
-            <Link key={c.id} to={`/search?category=${c.id}`} className="snap-start flex-col items-center gap-2 flex-shrink-0 card p-4 w-28 hover:border-primary border border-transparent transition-colors">
-              <span className="text-3xl bg-[--background] p-3 rounded-full">{c.icon}</span>
-              <span className="text-xs font-semibold text-center mt-2 leading-tight">{c.name}</span>
+            <Link
+              key={c.id}
+              to={`/search?category=${c.id}`}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                flexShrink: 0, width: '80px', padding: '12px 8px',
+                borderRadius: 'var(--radius-lg)', background: 'var(--bg-surface)',
+                border: '1px solid var(--border)', textAlign: 'center',
+                transition: 'all 0.2s', cursor: 'pointer'
+              }}
+            >
+              <span style={{ fontSize: '1.5rem', background: 'var(--bg-elevated)', padding: '8px', borderRadius: '50%' }}>
+                {c.icon}
+              </span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)', lineHeight: 1.2 }}>
+                {c.name}
+              </span>
             </Link>
           ))}
         </div>
       </section>
 
-      <section className="mb-10">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">Nearest to You (<FiMapPin className="inline text-primary" />)</h3>
+      {/* Nearest to You */}
+      <section style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            Nearest to You <FiMapPin style={{ color: 'var(--primary)', fontSize: '1rem' }} />
+          </h3>
         </div>
-        <div className="flex gap-6 overflow-x-auto pb-6 pt-2 -mx-4 px-4 snap-x" style={{ scrollbarWidth: 'none' }}>
+        <div style={{
+          display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '12px',
+          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
+        }}>
           {nearestBusinesses.length > 0 ? (
             nearestBusinesses.map((b) => (
-              <div key={b.id} className="snap-start flex-shrink-0 relative top-0 hover:-top-2 transition-all">
+              <div key={b.id} style={{ flexShrink: 0 }}>
                 <BusinessCard
                   business={b}
                   distance={calculateDistance(user.location, b.coordinates)}
+                  recommended={b === nearestBusinesses[0]}
                 />
               </div>
             ))
           ) : (
-            <p className="text-muted text-center w-full py-8">No businesses found nearby.</p>
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', width: '100%', padding: '2rem 0' }}>
+              No businesses found nearby.
+            </p>
           )}
         </div>
       </section>
 
-      <section className="mb-10">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">Recently Added</h3>
+      {/* Recently Added */}
+      <section style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Recently Added</h3>
         </div>
-        <div className="flex gap-6 overflow-x-auto pb-6 pt-2 -mx-4 px-4 snap-x" style={{ scrollbarWidth: 'none' }}>
+        <div style={{
+          display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '12px',
+          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
+        }}>
           {newestBusinesses.map((b) => (
-            <div key={b.id} className="snap-start flex-shrink-0">
+            <div key={b.id} style={{ flexShrink: 0 }}>
               <BusinessCard
                 business={b}
                 distance={calculateDistance(user.location, b.coordinates)}

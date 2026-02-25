@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMockData } from '../context/MockDataContext';
 import { useAuth } from '../context/AuthContext';
-import { FiMapPin, FiNavigation, FiX } from 'react-icons/fi';
+import { FiNavigation, FiX, FiList } from 'react-icons/fi';
+import BanayBanayMap from '../components/BanayBanayMap';
 
 const MapPage = () => {
-  const { businesses, getCategoryById } = useMockData();
+  const { businesses, categories, getCategoryById } = useMockData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedPin, setSelectedPin] = useState(null);
@@ -14,115 +15,147 @@ const MapPage = () => {
   const activeBusinesses = businesses.filter(b => b.isActive && (filterCategory ? b.categoryId === filterCategory : true));
 
   return (
-    <div className="flex-col h-[calc(100vh-70px-80px)] md:h-[calc(100vh-70px)] relative">
-
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      height: 'calc(100vh - 70px)',
+      position: 'relative',
+    }}>
       {/* Map Header / Filters */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+      <div style={{
+        position: 'absolute', top: '12px', left: '12px', right: '12px',
+        zIndex: 1000, display: 'flex', gap: '8px',
+        overflowX: 'auto', paddingBottom: '4px',
+      }}>
         <select
-          className="input-field py-2 px-3 text-sm bg-white shadow-md border-none flex-shrink-0"
           value={filterCategory}
           onChange={(e) => { setFilterCategory(e.target.value); setSelectedPin(null); }}
-          style={{ marginBottom: 0, borderRadius: '24px' }}
+          style={{
+            padding: '8px 14px',
+            borderRadius: '9999px',
+            border: '1px solid var(--border-strong)',
+            background: 'var(--bg-surface)',
+            color: 'var(--text-primary)',
+            fontSize: '0.8rem',
+            fontFamily: 'var(--font-family)',
+            fontWeight: 600,
+            boxShadow: 'var(--shadow-md)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            outline: 'none',
+          }}
         >
           <option value="">All Services</option>
-          {Array.from(new Set(businesses.map(b => b.categoryId))).map(cId => {
-            const cat = getCategoryById(cId);
-            return <option key={cId} value={cId}>{cat?.name}</option>;
-          })}
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
         </select>
 
         <button
-          className="btn py-2 px-4 shadow-md text-sm whitespace-nowrap flex-shrink-0 bg-white border-none"
           onClick={() => navigate('/search')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 14px',
+            borderRadius: '9999px',
+            border: '1px solid var(--border-strong)',
+            background: 'var(--bg-surface)',
+            color: 'var(--text-primary)',
+            fontSize: '0.8rem',
+            fontFamily: 'var(--font-family)',
+            fontWeight: 600,
+            boxShadow: 'var(--shadow-md)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}
         >
-          List View
+          <FiList size={14} /> List View
         </button>
       </div>
 
-      {/* Internal Map Container */}
-      <div className="flex-1 map-container relative bg-[#E8F0F2]" style={{
-        backgroundImage: `radial-gradient(#CBD5E1 1px, transparent 1px)`,
-        backgroundSize: '20px 20px',
-        opacity: 1,
-        border: 'none',
-        borderRadius: 0,
-        overflow: 'hidden'
-      }}>
-
-        {/* User Location Pin */}
-        {user?.location && (
-          <div className="map-pin" style={{ left: `${user.location.x}%`, top: `${user.location.y}%`, zIndex: 5 }}>
-            <div className="bg-blue-500 text-white w-4 h-4 rounded-full border-2 border-white shadow-md animate-pulse"></div>
-            <div className="bg-white/80 backdrop-blur-sm text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm mt-1">
-              You
-            </div>
-          </div>
-        )}
-
-        {/* Business Pins */}
-        {activeBusinesses.map(b => {
-          const cat = getCategoryById(b.categoryId);
-          const isSelected = selectedPin?.id === b.id;
-
-          return (
-            <div
-              key={b.id}
-              className={`map-pin transition-all duration-300 ${isSelected ? 'scale-125 z-30' : 'z-10'}`}
-              style={{ left: `${b.coordinates.x}%`, top: `${b.coordinates.y}%` }}
-              onClick={() => setSelectedPin(b)}
-            >
-              <div className={`map-pin-icon ${isSelected ? 'text-primary' : 'text-secondary'}`}>
-                {isSelected ? <FiMapPin size={32} /> : <FiMapPin size={28} />}
-              </div>
-
-              {!isSelected && (
-                <div className="bg-white text-secondary text-[10px] font-bold px-1 py-0.5 rounded shadow whitespace-nowrap -mt-2">
-                  {cat?.icon}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Selected Pin Popup / Bottom Sheet */}
-        {selectedPin && (
-          <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-8 md:bottom-8 md:w-80 bg-white rounded-xl shadow-lg border border-[--border] p-4 z-40 animate-fade-in-up">
-            <button
-              className="absolute top-2 right-2 p-2 text-muted hover:text-primary transition-colors"
-              onClick={() => setSelectedPin(null)}
-            >
-              <FiX />
-            </button>
-
-            <div className="pr-6">
-              <span className="text-xs font-bold text-secondary uppercase tracking-wider mb-1 block">
-                {getCategoryById(selectedPin.categoryId)?.name}
-              </span>
-              <h3 className="font-bold text-lg leading-tight mb-1">{selectedPin.name}</h3>
-              <p className="text-sm text-muted mb-3 line-clamp-1">{selectedPin.address}</p>
-
-              <div className="flex gap-2 mt-4">
-                <button
-                  className="btn btn-primary flex-1 py-2 text-sm"
-                  onClick={() => navigate(`/business/${selectedPin.id}`)}
-                >
-                  View Profile
-                </button>
-                <a
-                  href={`https://google.com/maps/dir/?api=1&destination=${selectedPin.coordinates.x},${selectedPin.coordinates.y}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-outline p-2 border border-primary text-primary flex items-center justify-center rounded-full w-10 h-10"
-                  aria-label="Get Directions"
-                >
-                  <FiNavigation />
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-
+      {/* OpenStreetMap */}
+      <div style={{ flex: 1 }}>
+        <BanayBanayMap
+          businesses={activeBusinesses}
+          userLocation={user?.location}
+          onPinClick={(business) => setSelectedPin(business)}
+          selectedId={selectedPin?.id}
+          getCategoryById={getCategoryById}
+          height="100%"
+          zoom={16}
+        />
       </div>
+
+      {/* Selected Pin Popup / Bottom Sheet */}
+      {selectedPin && (
+        <div style={{
+          position: 'absolute',
+          bottom: '16px', left: '16px', right: '16px',
+          maxWidth: '360px',
+          background: 'var(--bg-surface)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--shadow-lg)',
+          border: '1px solid var(--border)',
+          padding: '16px',
+          zIndex: 1000,
+          animation: 'fade-in-up 0.3s ease forwards',
+        }}>
+          <button
+            onClick={() => setSelectedPin(null)}
+            style={{
+              position: 'absolute', top: '10px', right: '10px',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', padding: '4px',
+            }}
+          >
+            <FiX size={18} />
+          </button>
+
+          <div style={{ paddingRight: '24px' }}>
+            <span style={{
+              fontSize: '0.7rem', fontWeight: 700,
+              color: 'var(--primary)', textTransform: 'uppercase',
+              letterSpacing: '0.08em', marginBottom: '4px', display: 'block',
+            }}>
+              {getCategoryById(selectedPin.categoryId)?.name}
+            </span>
+            <h3 style={{
+              fontWeight: 700, fontSize: '1.05rem',
+              color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: '4px',
+            }}>
+              {selectedPin.name}
+            </h3>
+            <p style={{
+              fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px',
+            }}>
+              {selectedPin.address}
+            </p>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '10px 16px', fontSize: '0.85rem' }}
+                onClick={() => navigate(`/business/${selectedPin.id}`)}
+              >
+                View Profile
+              </button>
+              <a
+                href={`https://google.com/maps/search/Banay-Banay+Cabuyao`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '42px', height: '42px', borderRadius: '50%',
+                  border: '2px solid var(--primary)', color: 'var(--primary)',
+                  background: 'transparent', flexShrink: 0,
+                }}
+                aria-label="Get Directions"
+              >
+                <FiNavigation size={16} />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

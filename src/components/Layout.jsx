@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FiHome, FiSearch, FiMap, FiUser, FiPieChart, FiSettings, FiList, FiLogOut } from 'react-icons/fi';
+import ThemeSwitch from './ThemeSwitch';
 import './Layout.css';
 
 const Layout = () => {
@@ -39,10 +40,11 @@ const Layout = () => {
             <header className="navbar glass-panel">
                 <div className="container flex justify-between items-center py-4">
                     <Link to="/" className="logo-link">
-                        <h1 className="logo-text">Barangay<span className="text-primary">Connect</span></h1>
+                        <h1 className="logo-text">Acu<span className="text-primary">ity</span></h1>
                     </Link>
 
                     <div className="desktop-actions flex items-center gap-4">
+                        <ThemeSwitch />
                         {isAuthenticated ? (
                             <div className="user-info flex items-center gap-4">
                                 <span className="text-sm font-semibold hidden-mobile">Hi, {user.name}</span>
