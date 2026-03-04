@@ -2,6 +2,7 @@ import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useMockData } from '../context/MockDataContext';
 
 // Fix default marker icon issue with webpack/CRA
 delete L.Icon.Default.prototype._getIconUrl;
@@ -61,8 +62,9 @@ const userLocationIcon = L.divIcon({
  * Props:
  * - businesses: array of business objects with lat/lng or coordinates
  * - userLocation: { lat, lng } for the user's position
- * - onPinClick: callback when a business pin is clicked
- * - selectedId: ID of the currently selected business
+ * - onClusterClick: callback when a cluster pin is clicked
+ * - selectedId: ID of the currently selected landmark/business
+
  * - height: CSS height (default '100%')
  * - interactive: allow pan/zoom (default true)
  * - zoom: initial zoom level
@@ -71,7 +73,7 @@ const userLocationIcon = L.divIcon({
 const BanayBanayMap = ({
     businesses = [],
     userLocation = null,
-    onPinClick,
+    onClusterClick,
     selectedId,
     height = '100%',
     interactive = true,
@@ -79,23 +81,39 @@ const BanayBanayMap = ({
     showControls = true,
     getCategoryById,
 }) => {
+    const { getLandmarkById } = useMockData();
 
-    // Convert the old 0-100 coordinate system to lat/lng around Banay-Banay
-    // The grid spans roughly 0.008 degrees (about 890m) in each direction
     const toLatLng = (coords) => {
         if (!coords) return BANAY_BANAY_CENTER;
         if (coords.lat && coords.lng) return [coords.lat, coords.lng];
-        // Map 0-100 grid to a small area around Banay-Banay center
         const lat = BANAY_BANAY_CENTER[0] + ((50 - coords.y) / 50) * 0.004;
         const lng = BANAY_BANAY_CENTER[1] + ((coords.x - 50) / 50) * 0.005;
         return [lat, lng];
     };
 
-    const businessMarkers = businesses.map(b => ({
-        id: b.id,
-        position: toLatLng(b.coordinates),
-        business: b,
-    }));
+    // Group businesses by landmark
+    const groupedBusinesses = businesses.reduce((acc, business) => {
+        const lid = business.landmarkId;
+        if (lid) {
+            if (!acc[lid]) acc[lid] = [];
+            acc[lid].push(business);
+        } else {
+            // Support legacy generic marker if needed
+            if (!acc['unknown']) acc['unknown'] = [];
+            acc['unknown'].push(business);
+        }
+        return acc;
+    }, {});
+
+    const clusterMarkers = Object.entries(groupedBusinesses).map(([lid, bizList]) => {
+        const landmark = getLandmarkById(lid);
+        return {
+            id: lid,
+            position: landmark ? landmark.latLng : (bizList[0].coordinates ? toLatLng(bizList[0].coordinates) : BANAY_BANAY_CENTER),
+            landmark: landmark || { id: 'unknown', name: bizList[0].address || 'Unknown Location' },
+            businesses: bizList
+        };
+    });
 
     const userPos = userLocation
         ? toLatLng(userLocation)
@@ -130,35 +148,37 @@ const BanayBanayMap = ({
                     </Marker>
                 )}
 
-                {/* Business markers */}
-                {businessMarkers.map(({ id, position, business }) => {
+                {/* Cluster markers */}
+                {clusterMarkers.map(({ id, position, landmark, businesses: clusterBiz }) => {
                     const isSelected = selectedId === id;
-                    const cat = getCategoryById ? getCategoryById(business.categoryId) : null;
                     return (
                         <Marker
-                            key={id}
+                            key={`cluster-${id}`}
                             position={position}
                             icon={createCustomIcon(
                                 isSelected ? '#0D9488' : '#14B8A6',
                                 isSelected ? 34 : 26
                             )}
                             eventHandlers={{
-                                click: () => onPinClick && onPinClick(business),
+                                click: () => onClusterClick && onClusterClick({ businesses: clusterBiz, landmark }),
                             }}
                         >
                             <Popup>
                                 <div style={{ minWidth: '180px' }}>
                                     <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>
-                                        {business.name}
+                                        📍 Near {landmark.name}
                                     </div>
-                                    {cat && (
-                                        <div style={{ fontSize: '0.7rem', color: '#14B8A6', fontWeight: 600, marginBottom: '4px' }}>
-                                            {cat.name}
-                                        </div>
-                                    )}
                                     <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                                        {business.address}
+                                        {clusterBiz.length} business{clusterBiz.length > 1 ? 'es' : ''} here
                                     </div>
+                                    <ul style={{ paddingLeft: '16px', margin: '8px 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        {clusterBiz.slice(0, 3).map(b => (
+                                            <li key={b.id} style={{ marginBottom: '2px' }}>{b.name}</li>
+                                        ))}
+                                        {clusterBiz.length > 3 && (
+                                            <li style={{ fontStyle: 'italic' }}>...and {clusterBiz.length - 3} more</li>
+                                        )}
+                                    </ul>
                                 </div>
                             </Popup>
                         </Marker>

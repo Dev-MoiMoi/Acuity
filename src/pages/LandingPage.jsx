@@ -40,11 +40,11 @@ const LandingPage = () => {
                     </p>
 
                     <div className="hero-cta animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                        <Link to="/register?role=resident" className="btn btn-primary btn-lg">
-                            Explore as Resident <FiArrowRight />
+                        <Link to="/home" className="btn btn-primary btn-lg">
+                            Explore Directory <FiArrowRight />
                         </Link>
-                        <Link to="/register?role=owner" className="btn btn-secondary btn-lg">
-                            Register a Business
+                        <Link to="/business/new" className="btn btn-secondary btn-lg">
+                            Add a Business
                         </Link>
                     </div>
 
@@ -291,11 +291,11 @@ const LandingPage = () => {
                             <h2>Ready to Discover Your Neighborhood?</h2>
                             <p>Whether you're a resident seeking services or a business owner aiming for visibility — Acuity connects you.</p>
                             <div className="cta-buttons">
-                                <Link to="/register?role=resident" className="btn btn-primary btn-lg">
-                                    Get Started <FiArrowRight />
+                                <Link to="/home" className="btn btn-primary btn-lg">
+                                    Start Discovering <FiArrowRight />
                                 </Link>
-                                <Link to="/login" className="btn btn-outline btn-lg">
-                                    Login to Dashboard
+                                <Link to="/business/new" className="btn btn-outline btn-lg">
+                                    Add Your Business
                                 </Link>
                             </div>
                         </div>

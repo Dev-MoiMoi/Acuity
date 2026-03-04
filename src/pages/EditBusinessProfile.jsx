@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useMockData } from '../context/MockDataContext';
-import { FiSave, FiMapPin, FiCheckCircle } from 'react-icons/fi';
+import { FiSave, FiMapPin, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 
 const EditBusinessProfile = () => {
   const { user } = useAuth();
-  const { getBusinessesByOwner, categories, updateBusiness, addBusiness } = useMockData();
+  const { id } = useParams();
+  const { categories, landmarks, updateBusiness, addBusiness, getBusinessById } = useMockData();
   const navigate = useNavigate();
 
-  const myBusinesses = getBusinessesByOwner(user.id);
-  const existingBusiness = myBusinesses.length > 0 ? myBusinesses[0] : null;
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successNav, setSuccessNav] = useState('/');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const existingBusiness = id ? getBusinessById(id) : null;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,6 +29,7 @@ const EditBusinessProfile = () => {
     verifiedContact: false,
     communityEngaged: false,
     isOpen: true,
+    landmarkId: '',
     coordinates: { x: 50, y: 50 }
   });
 
@@ -34,7 +39,7 @@ const EditBusinessProfile = () => {
         ...existingBusiness,
         services: existingBusiness.services.join(', ')
       });
-    } else {
+    } else if (user) {
       setFormData(prev => ({
         ...prev,
         contact: user.contact || ''
@@ -57,31 +62,50 @@ const EditBusinessProfile = () => {
     setFormData({ ...formData, coordinates: { x, y } });
   };
 
+  const isValid = formData.name.trim() !== '' && formData.landmarkId !== '' && (formData.contact.trim() !== '' || formData.services.trim() !== '');
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!isValid) return;
 
-    // Convert services string back to array
     const businessData = {
       ...formData,
       services: formData.services.split(',').map(s => s.trim()).filter(Boolean),
-      ownerId: user.id
+      ownerId: existingBusiness ? existingBusiness.ownerId : (user ? user.id : 'anonymous')
     };
 
     if (existingBusiness) {
       updateBusiness(existingBusiness.id, businessData);
-      alert('Profile updated successfully!');
+      setSuccessMsg('Your corrections have been saved. Thank you for keeping the directory accurate!');
+      setSuccessNav(`/business/${existingBusiness.id}`);
+      setShowSuccessModal(true);
     } else {
       const newBus = addBusiness(businessData);
-      user.businessId = newBus.id; // update mock user state
-      alert('Business Profile created!');
+      if (user) {
+        user.businessId = newBus.id;
+      }
+      setSuccessMsg('Your business is now listed in the Banay-Banay directory!');
+      setSuccessNav(user?.role === 'owner' ? '/owner' : `/business/${newBus.id}`);
+      setShowSuccessModal(true);
     }
-    navigate('/owner');
   };
+
+  /* Auto-navigate after modal is shown */
+  useEffect(() => {
+    if (!showSuccessModal) return;
+    const t = setTimeout(() => navigate(successNav), 2500);
+    return () => clearTimeout(t);
+  }, [showSuccessModal, successNav, navigate]);
 
   return (
     <div className="container py-6 max-w-3xl">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-bold text-2xl">{existingBusiness ? 'Edit Business Profile' : 'Create Profile'}</h2>
+        <div>
+          <h2 className="font-bold text-2xl">{existingBusiness ? 'Edit Core Information' : 'Add Missing Business'}</h2>
+          <p className="text-sm text-secondary mt-1">
+            {existingBusiness ? 'Our directory is community-driven. Help keep this profile accurate.' : 'Thanks for contributing to the Banay-Banay directory.'}
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex-col gap-6">
@@ -126,7 +150,7 @@ const EditBusinessProfile = () => {
 
         {/* Contact & Location */}
         <div className="card">
-          <h3 className="font-bold text-lg mb-4 border-b pb-2">Contact & Location</h3>
+          <h3 className="font-bold text-lg mb-4 border-b pb-2">Contact &amp; Location</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="input-group">
@@ -139,30 +163,25 @@ const EditBusinessProfile = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="input-group">
-              <label className="input-label">Street Address (Within Banay-Banay)</label>
-              <input required type="text" name="address" className="input-field" placeholder="Block 1, Purok 2..." value={formData.address} onChange={handleChange} />
+              <label className="input-label">Landmark Anchor</label>
+              <select required name="landmarkId" className="input-field" value={formData.landmarkId} onChange={handleChange}>
+                <option value="">Select Nearest Landmark</option>
+                {landmarks.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted mt-1">Used to group businesses instead of specific GPS points.</p>
             </div>
             <div className="input-group">
-              <label className="input-label">Operating Hours</label>
-              <input type="text" name="operatingHours" className="input-field" placeholder="e.g. 8:00 AM - 5:00 PM, Mon-Sat" value={formData.operatingHours} onChange={handleChange} />
+              <label className="input-label">Additional Address Details</label>
+              <input type="text" name="address" className="input-field" placeholder="Block 1, Purok 2..." value={formData.address} onChange={handleChange} />
             </div>
           </div>
-
-          <div className="input-group mt-2">
-            <label className="input-label flex justify-between">
-              <span>Map Pin Location</span>
-              <span className="text-xs text-primary">Click map to move pin</span>
-            </label>
-            <div className="bg-[#e5e5f7] border border-[--border] rounded-lg h-[200px] relative cursor-pointer overflow-hidden"
-              onClick={handleMapClick}
-              style={{ backgroundImage: `repeating-radial-gradient(circle at 0 0, transparent 0, #e5e5f7 10px), repeating-linear-gradient(#E5E9EC, #E5E9EC)` }}>
-              <div className="absolute text-primary text-3xl drop-shadow-md z-10 transition-all duration-300" style={{ left: `${formData.coordinates.x}%`, top: `${formData.coordinates.y}%`, transform: 'translate(-50%, -100%)' }}>
-                <FiMapPin />
-              </div>
-            </div>
-            <p className="text-xs text-muted mt-1">This helps residents see how close you are to them.</p>
+          <div className="input-group">
+            <label className="input-label">Operating Hours</label>
+            <input type="text" name="operatingHours" className="input-field" placeholder="e.g. 8:00 AM - 5:00 PM, Mon-Sat" value={formData.operatingHours} onChange={handleChange} />
           </div>
         </div>
 
@@ -187,10 +206,94 @@ const EditBusinessProfile = () => {
           </label>
         </div>
 
-        <button type="submit" className="btn btn-primary btn-full py-4 text-lg">
-          <FiSave /> {existingBusiness ? 'Save Changes' : 'Publish Business Profile'}
+        <div className="card bg-primary/5 border-primary/20 mb-6">
+          <h3 className="font-bold text-lg mb-2 flex items-center gap-2 text-primary">
+            <FiAlertCircle /> Data Quality Check
+          </h3>
+          <ul className="text-sm list-disc pl-5 text-secondary flex-col gap-1">
+            <li className={formData.name.trim() ? "text-success font-medium" : ""}>Must have a Business Name</li>
+            <li className={formData.landmarkId ? "text-success font-medium" : ""}>Must be anchored to a Landmark</li>
+            <li className={(formData.contact.trim() || formData.services.trim()) ? "text-success font-medium" : ""}>Must include either a Contact Number or list of Services</li>
+          </ul>
+        </div>
+
+        <button type="submit" disabled={!isValid} className="btn btn-primary btn-full py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+          <FiSave /> {existingBusiness ? 'Save Corrections' : 'Publish Business Profile'}
         </button>
       </form>
+
+      {/* ── Success Modal ── */}
+      {showSuccessModal && (
+        <div
+          onClick={() => navigate(successNav)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            animation: 'fade-in-up 0.3s cubic-bezier(0.16,1,0.3,1) both',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '2.5rem 2rem',
+              maxWidth: '380px', width: '100%',
+              boxShadow: 'var(--shadow-lg), 0 0 60px var(--primary-glow)',
+              textAlign: 'center',
+              animation: 'modal-in 0.35s cubic-bezier(0.16,1,0.3,1) both',
+            }}
+          >
+            {/* Icon */}
+            <div style={{
+              width: '72px', height: '72px', borderRadius: '50%',
+              background: 'rgba(20,184,166,0.12)',
+              border: '2px solid rgba(20,184,166,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+              boxShadow: '0 0 30px var(--primary-glow)',
+            }}>
+              <FiCheckCircle size={36} style={{ color: 'var(--primary)' }} />
+            </div>
+
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+              {existingBusiness ? 'Corrections Saved!' : 'Profile Published!'}
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
+              {successMsg}
+            </p>
+
+            {/* Countdown progress bar */}
+            <div style={{ height: '3px', borderRadius: '9999px', background: 'var(--bg-elevated)', marginBottom: '1.5rem', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: '9999px',
+                background: 'linear-gradient(90deg, var(--primary), var(--primary-light))',
+                animation: 'progress-drain 2.5s linear forwards',
+              }} />
+            </div>
+
+            <button
+              onClick={() => navigate(successNav)}
+              className="btn btn-primary btn-full"
+              style={{ fontSize: '0.95rem' }}
+            >
+              View Profile
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes progress-drain {
+          from { width: 100%; }
+          to   { width: 0%; }
+        }
+      `}</style>
     </div>
   );
 };

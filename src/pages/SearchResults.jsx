@@ -8,7 +8,7 @@ import { FiSearch, FiAlertCircle } from 'react-icons/fi';
 const SearchResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { businesses, categories, calculateDistance } = useMockData();
+  const { businesses, categories, calculateDistance, getLandmarkById } = useMockData();
   const { user } = useAuth();
 
   const queryParams = new URLSearchParams(location.search);
@@ -41,7 +41,7 @@ const SearchResults = () => {
       }
 
       if (sortBy === 'nearest') {
-        filtered.sort((a, b) => parseFloat(calculateDistance(user.location, a.coordinates)) - parseFloat(calculateDistance(user.location, b.coordinates)));
+        filtered.sort((a, b) => parseFloat(calculateDistance(user.location, getLandmarkById(a.landmarkId)?.coordinates)) - parseFloat(calculateDistance(user.location, getLandmarkById(b.landmarkId)?.coordinates)));
       } else {
         filtered.sort((a, b) => new Date(b.stats.created) - new Date(a.stats.created));
       }
@@ -64,13 +64,13 @@ const SearchResults = () => {
   return (
     <div className="container py-6">
       <div className="flex-col gap-4 mb-6 sticky top-[70px] bg-[--background] z-10 py-4 shadow-sm border-b border-[--border] -mx-4 px-4">
-        <form onSubmit={handleSearch} className="flex gap-2 w-full">
-          <div className="relative flex-1 flex items-center">
-            <span className="absolute left-3 text-muted"><FiSearch /></span>
+        <form onSubmit={handleSearch} className="flex gap-2 w-full items-center">
+          <span className="text-muted flex-shrink-0"><FiSearch size={22} /></span>
+          <div className="flex-1">
             <input
               type="text"
-              className="input-field pl-10 w-full mb-0"
-              placeholder="Search services..."
+              className="input-field w-full"
+              placeholder="Search Services"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{ marginBottom: 0 }}
@@ -127,7 +127,7 @@ const SearchResults = () => {
         ) : results.length > 0 ? (
           <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {results.map(b => (
-              <BusinessCard key={b.id} business={b} distance={calculateDistance(user.location, b.coordinates)} />
+              <BusinessCard key={b.id} business={b} distance={calculateDistance(user.location, getLandmarkById(b.landmarkId)?.coordinates)} />
             ))}
           </div>
         ) : (

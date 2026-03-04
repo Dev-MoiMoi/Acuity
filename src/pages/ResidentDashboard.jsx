@@ -1,14 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useMockData } from '../context/MockDataContext';
 import BusinessCard from '../components/BusinessCard';
-import { FiSearch, FiArrowRight, FiMapPin } from 'react-icons/fi';
+import { FiSearch, FiArrowRight, FiMapPin, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+
+/* ─── Reusable horizontal card slider ─── */
+const CardSlider = ({ children }) => {
+  const trackRef = useRef(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  const syncState = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft < maxScroll - 4);
+    setProgress(maxScroll > 0 ? el.scrollLeft / maxScroll : 0);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    syncState();
+    el.addEventListener('scroll', syncState, { passive: true });
+    window.addEventListener('resize', syncState);
+    return () => {
+      el.removeEventListener('scroll', syncState);
+      window.removeEventListener('resize', syncState);
+    };
+  }, [syncState]);
+
+  const slide = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * 300, behavior: 'smooth' });
+  };
+
+  const arrowBase = {
+    position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+    zIndex: 10, width: '36px', height: '36px', borderRadius: '50%',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-strong)',
+    boxShadow: 'var(--shadow-md)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', color: 'var(--text-primary)',
+    transition: 'all 0.2s ease',
+    padding: 0,
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Left arrow */}
+      {canLeft && (
+        <button
+          onClick={() => slide(-1)}
+          style={{ ...arrowBase, left: '-14px' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-elevated)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-strong)'; }}
+          aria-label="Scroll left"
+        >
+          <FiChevronLeft size={18} />
+        </button>
+      )}
+
+      {/* Scrollable track */}
+      <div
+        ref={trackRef}
+        style={{
+          display: 'flex', gap: '16px',
+          overflowX: 'auto', paddingBottom: '12px',
+          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        {children}
+      </div>
+
+      {/* Right arrow */}
+      {canRight && (
+        <button
+          onClick={() => slide(1)}
+          style={{ ...arrowBase, right: '-14px' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-elevated)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-strong)'; }}
+          aria-label="Scroll right"
+        >
+          <FiChevronRight size={18} />
+        </button>
+      )}
+
+      {/* Progress bar */}
+      <div style={{ height: '3px', borderRadius: '9999px', background: 'var(--bg-elevated)', marginTop: '6px', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: '9999px',
+          background: 'linear-gradient(90deg, var(--primary), var(--primary-light))',
+          width: `${Math.max(progress * 100, 8)}%`,
+          transition: 'width 0.15s ease',
+        }} />
+      </div>
+    </div>
+  );
+};
 
 const ResidentDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { businesses, categories, calculateDistance } = useMockData();
+  const { businesses, categories, calculateDistance, getLandmarkById } = useMockData();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e) => {
@@ -23,8 +122,8 @@ const ResidentDashboard = () => {
   const nearestBusinesses = [...businesses]
     .filter(b => b.isActive)
     .sort((a, b) => {
-      const distA = parseFloat(calculateDistance(user.location, a.coordinates));
-      const distB = parseFloat(calculateDistance(user.location, b.coordinates));
+      const distA = parseFloat(calculateDistance(user.location, getLandmarkById(a.landmarkId)?.coordinates));
+      const distB = parseFloat(calculateDistance(user.location, getLandmarkById(b.landmarkId)?.coordinates));
       return distA - distB;
     })
     .slice(0, 5);
@@ -50,7 +149,7 @@ const ResidentDashboard = () => {
         <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }}></div>
 
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginBottom: '4px', position: 'relative', zIndex: 1 }}>
-          Hello, {user.name.split(' ')[0]} 👋
+          Hello, {user.name.split(' ')[0]}
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1.25rem', position: 'relative', zIndex: 1 }}>
           What service are you looking for today?
@@ -63,7 +162,7 @@ const ResidentDashboard = () => {
             </span>
             <input
               type="text"
-              placeholder="e.g., Vulcanizing, Sari-Sari, Laundry"
+              placeholder="Search here..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -100,7 +199,8 @@ const ResidentDashboard = () => {
         </div>
         <div style={{
           display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px',
-          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
+          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch',
+          alignItems: 'stretch'
         }}>
           {categories.map(c => (
             <Link
@@ -108,10 +208,11 @@ const ResidentDashboard = () => {
               to={`/search?category=${c.id}`}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                flexShrink: 0, width: '80px', padding: '12px 8px',
+                flexShrink: 0, width: '80px', minHeight: '100px', padding: '12px 6px',
                 borderRadius: 'var(--radius-lg)', background: 'var(--bg-surface)',
                 border: '1px solid var(--border)', textAlign: 'center',
-                transition: 'all 0.2s', cursor: 'pointer'
+                transition: 'all 0.2s', cursor: 'pointer',
+                justifyContent: 'flex-start'
               }}
             >
               <span style={{ fontSize: '1.5rem', background: 'var(--bg-elevated)', padding: '8px', borderRadius: '50%' }}>
@@ -126,52 +227,52 @@ const ResidentDashboard = () => {
       </section>
 
       {/* Nearest to You */}
-      <section style={{ marginBottom: '2rem' }}>
+      <section style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
             Nearest to You <FiMapPin style={{ color: 'var(--primary)', fontSize: '1rem' }} />
           </h3>
+          <Link to="/search" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            View All <FiArrowRight size={13} />
+          </Link>
         </div>
-        <div style={{
-          display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '12px',
-          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
-        }}>
-          {nearestBusinesses.length > 0 ? (
-            nearestBusinesses.map((b) => (
+        {nearestBusinesses.length > 0 ? (
+          <CardSlider>
+            {nearestBusinesses.map((b) => (
               <div key={b.id} style={{ flexShrink: 0 }}>
                 <BusinessCard
                   business={b}
-                  distance={calculateDistance(user.location, b.coordinates)}
+                  distance={calculateDistance(user.location, getLandmarkById(b.landmarkId)?.coordinates)}
                   recommended={b === nearestBusinesses[0]}
                 />
               </div>
-            ))
-          ) : (
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center', width: '100%', padding: '2rem 0' }}>
-              No businesses found nearby.
-            </p>
-          )}
-        </div>
+            ))}
+          </CardSlider>
+        ) : (
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center', width: '100%', padding: '2rem 0' }}>
+            No businesses found nearby.
+          </p>
+        )}
       </section>
 
       {/* Recently Added */}
-      <section style={{ marginBottom: '2rem' }}>
+      <section style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontWeight: 700, fontSize: '1.1rem' }}>Recently Added</h3>
+          <Link to="/search?sort=newest" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            View All <FiArrowRight size={13} />
+          </Link>
         </div>
-        <div style={{
-          display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '12px',
-          scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
-        }}>
+        <CardSlider>
           {newestBusinesses.map((b) => (
             <div key={b.id} style={{ flexShrink: 0 }}>
               <BusinessCard
                 business={b}
-                distance={calculateDistance(user.location, b.coordinates)}
+                distance={calculateDistance(user.location, getLandmarkById(b.landmarkId)?.coordinates)}
               />
             </div>
           ))}
-        </div>
+        </CardSlider>
       </section>
     </div>
   );

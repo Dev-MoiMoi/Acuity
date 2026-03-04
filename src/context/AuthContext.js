@@ -5,9 +5,13 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    // Initialize with null to simulate logged out state
-    // Or set to a mock user for quicker development/testing
-    const [user, setUser] = useState(null);
+    // Enforce transparency/wiki approach: Everyone is an anonymous resident by default
+    const [user, setUser] = useState({
+        id: 'anonymous-resident',
+        name: 'Community Member',
+        role: 'resident',
+        location: { x: 50, y: 50 } // Default center
+    });
 
     const login = (email, password) => {
         // Mock login logic

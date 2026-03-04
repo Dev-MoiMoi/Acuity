@@ -9,7 +9,7 @@ const MapPage = () => {
   const { businesses, categories, getCategoryById } = useMockData();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selectedPin, setSelectedPin] = useState(null);
+  const [selectedCluster, setSelectedCluster] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
 
   const activeBusinesses = businesses.filter(b => b.isActive && (filterCategory ? b.categoryId === filterCategory : true));
@@ -28,7 +28,7 @@ const MapPage = () => {
       }}>
         <select
           value={filterCategory}
-          onChange={(e) => { setFilterCategory(e.target.value); setSelectedPin(null); }}
+          onChange={(e) => { setFilterCategory(e.target.value); setSelectedCluster(null); }}
           style={{
             padding: '8px 14px',
             borderRadius: '9999px',
@@ -77,19 +77,20 @@ const MapPage = () => {
         <BanayBanayMap
           businesses={activeBusinesses}
           userLocation={user?.location}
-          onPinClick={(business) => setSelectedPin(business)}
-          selectedId={selectedPin?.id}
+          onClusterClick={(cluster) => setSelectedCluster(cluster)}
+          selectedId={selectedCluster?.landmark.id}
           getCategoryById={getCategoryById}
           height="100%"
           zoom={16}
         />
       </div>
 
-      {/* Selected Pin Popup / Bottom Sheet */}
-      {selectedPin && (
+      {/* Selected Cluster Popup / Bottom Sheet */}
+      {selectedCluster && (
         <div style={{
           position: 'absolute',
           bottom: '16px', left: '16px', right: '16px',
+          maxHeight: '40vh', overflowY: 'auto',
           maxWidth: '360px',
           background: 'var(--bg-surface)',
           borderRadius: 'var(--radius-xl)',
@@ -100,7 +101,7 @@ const MapPage = () => {
           animation: 'fade-in-up 0.3s ease forwards',
         }}>
           <button
-            onClick={() => setSelectedPin(null)}
+            onClick={() => setSelectedCluster(null)}
             style={{
               position: 'absolute', top: '10px', right: '10px',
               background: 'none', border: 'none', cursor: 'pointer',
@@ -116,43 +117,40 @@ const MapPage = () => {
               color: 'var(--primary)', textTransform: 'uppercase',
               letterSpacing: '0.08em', marginBottom: '4px', display: 'block',
             }}>
-              {getCategoryById(selectedPin.categoryId)?.name}
+              📍 Near {selectedCluster.landmark.name}
             </span>
             <h3 style={{
               fontWeight: 700, fontSize: '1.05rem',
-              color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: '4px',
+              color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: '12px',
             }}>
-              {selectedPin.name}
+              Businesses ({selectedCluster.businesses.length})
             </h3>
-            <p style={{
-              fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px',
-            }}>
-              {selectedPin.address}
-            </p>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                className="btn btn-primary"
-                style={{ flex: 1, padding: '10px 16px', fontSize: '0.85rem' }}
-                onClick={() => navigate(`/business/${selectedPin.id}`)}
-              >
-                View Profile
-              </button>
-              <a
-                href={`https://google.com/maps/search/Banay-Banay+Cabuyao`}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '42px', height: '42px', borderRadius: '50%',
-                  border: '2px solid var(--primary)', color: 'var(--primary)',
-                  background: 'transparent', flexShrink: 0,
-                }}
-                aria-label="Get Directions"
-              >
-                <FiNavigation size={16} />
-              </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectedCluster.businesses.map(b => (
+                <div key={b.id} style={{
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>{b.name}</h4>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {getCategoryById(b.categoryId)?.name || 'Service'}
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                    onClick={() => navigate(`/business/${b.id}`)}
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
             </div>
+
           </div>
         </div>
       )}

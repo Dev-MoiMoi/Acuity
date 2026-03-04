@@ -54,6 +54,13 @@ export const CATEGORIES = [
     { id: 'c7', name: 'Other Services', icon: <IconPackage /> }
 ];
 
+export const LANDMARKS = [
+    { id: 'l1', name: 'Banay-Banay Elementary School', coordinates: { x: 45, y: 50 }, latLng: [14.2740, 121.1250] },
+    { id: 'l2', name: 'Barangay Hall / Covered Court', coordinates: { x: 55, y: 55 }, latLng: [14.2750, 121.1260] },
+    { id: 'l3', name: 'San Vicente Ferrer Chapel', coordinates: { x: 60, y: 40 }, latLng: [14.2730, 121.1270] },
+    { id: 'l4', name: 'Pulo-Diezmo Road Intersection', coordinates: { x: 30, y: 70 }, latLng: [14.2760, 121.1230] },
+];
+
 // Initial mock businesses in Barangay Banay-Banay context
 const INITIAL_BUSINESSES = [
     {
@@ -64,7 +71,7 @@ const INITIAL_BUSINESSES = [
         services: ['Groceries', 'Load', 'Ice', 'Snacks'],
         locationType: 'Stall-based',
         address: 'Block 4, Lot 12, Banay-Banay',
-        coordinates: { x: 40, y: 55 }, // Relative coordinates 0-100 for the SVG map
+        landmarkId: 'l1', // Near Elementary School
         contact: '09123456789',
         facebookUrl: 'https://facebook.com/alingnena',
         description: 'Your friendly neighborhood convenience store. We sell everyday essentials, cold drinks, and e-load.',
@@ -73,7 +80,9 @@ const INITIAL_BUSINESSES = [
         communityEngaged: true,
         isActive: true,
         stats: { impressions: 145, inquiries: 24, created: '2023-10-12' },
-        isOpen: true
+        isOpen: true,
+        flagCount: 0,
+        flagReasons: []
     },
     {
         id: 'b2',
@@ -83,7 +92,7 @@ const INITIAL_BUSINESSES = [
         services: ['Vulcanizing', 'Bike Repair', 'Basic Motor Tools'],
         locationType: 'Stall-based',
         address: 'Main Road corner Purok 2',
-        coordinates: { x: 70, y: 30 },
+        landmarkId: 'l4', // Near Intersection
         contact: '09987654321',
         facebookUrl: '',
         description: 'Fast and reliable tire patching and bike repairs. Located right at the highway entrance.',
@@ -92,7 +101,9 @@ const INITIAL_BUSINESSES = [
         communityEngaged: false,
         isActive: true,
         stats: { impressions: 89, inquiries: 15, created: '2024-01-05' },
-        isOpen: true
+        isOpen: true,
+        flagCount: 0,
+        flagReasons: []
     },
     {
         id: 'b3',
@@ -102,7 +113,7 @@ const INITIAL_BUSINESSES = [
         services: ['Silog Meals', 'Pancit Bilao', 'Made-to-order Desserts'],
         locationType: 'Home-based',
         address: 'Purok 3, Interior',
-        coordinates: { x: 50, y: 80 },
+        landmarkId: 'l2', // Near Barangay Hall
         contact: '09191234567',
         facebookUrl: 'https://facebook.com/mariashomekitchen',
         description: 'Freshly cooked home meals for pre-order. We accept bulk orders for parties within the barangay.',
@@ -111,7 +122,9 @@ const INITIAL_BUSINESSES = [
         communityEngaged: true,
         isActive: true,
         stats: { impressions: 210, inquiries: 45, created: '2024-03-20' },
-        isOpen: false // currently closed
+        isOpen: false, // currently closed
+        flagCount: 3, // Pre-flagged for testing
+        flagReasons: ['Location impossible to find', 'Never answers phone', 'Might be closed permanently']
     },
     {
         id: 'b4',
@@ -121,7 +134,7 @@ const INITIAL_BUSINESSES = [
         services: ['Wash & Fold', 'Dry Cleaning', 'Ironing'],
         locationType: 'Stall-based',
         address: 'Purok 1, near the Court',
-        coordinates: { x: 30, y: 65 },
+        landmarkId: 'l2', // Near Barangay Hall
         contact: '09223344556',
         facebookUrl: '',
         description: 'Affordable labada services. Pick-up and delivery available for nearby blocks.',
@@ -130,20 +143,25 @@ const INITIAL_BUSINESSES = [
         communityEngaged: true,
         isActive: true,
         stats: { impressions: 175, inquiries: 30, created: '2023-11-15' },
-        isOpen: true
+        isOpen: true,
+        flagCount: 0,
+        flagReasons: []
     }
 ];
 
 export const MockDataProvider = ({ children }) => {
     const [businesses, setBusinesses] = useState(INITIAL_BUSINESSES);
     const categories = CATEGORIES;
+    const landmarks = LANDMARKS;
 
     const addBusiness = (businessData) => {
         const newBusiness = {
             ...businessData,
             id: `b${Date.now()}`,
             isActive: true,
-            stats: { impressions: 0, inquiries: 0, created: new Date().toISOString().split('T')[0] }
+            stats: { impressions: 0, inquiries: 0, created: new Date().toISOString().split('T')[0] },
+            flagCount: 0,
+            flagReasons: []
         };
         setBusinesses([...businesses, newBusiness]);
         return newBusiness;
@@ -153,9 +171,23 @@ export const MockDataProvider = ({ children }) => {
         setBusinesses(businesses.map(b => b.id === businessId ? { ...b, ...data } : b));
     };
 
+    const flagBusiness = (businessId, reason) => {
+        setBusinesses(businesses.map(b => {
+            if (b.id === businessId) {
+                return {
+                    ...b,
+                    flagCount: (b.flagCount || 0) + 1,
+                    flagReasons: [...(b.flagReasons || []), reason]
+                };
+            }
+            return b;
+        }));
+    };
+
     const getBusinessById = (id) => businesses.find(b => b.id === id);
     const getBusinessesByOwner = (ownerId) => businesses.filter(b => b.ownerId === ownerId);
     const getCategoryById = (id) => categories.find(c => c.id === id);
+    const getLandmarkById = (id) => landmarks.find(l => l.id === id);
 
     // Helper to calculate mock distance (Pythagorean theorem on our 0-100 internal grid)
     // Distance will be returned as "X km" visually, we'll map 1 grid unit to 0.05 km
@@ -170,11 +202,14 @@ export const MockDataProvider = ({ children }) => {
     const value = {
         businesses,
         categories,
+        landmarks,
         addBusiness,
         updateBusiness,
+        flagBusiness,
         getBusinessById,
         getBusinessesByOwner,
         getCategoryById,
+        getLandmarkById,
         calculateDistance
     };
 

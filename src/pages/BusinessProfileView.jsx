@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useMockData } from '../context/MockDataContext';
 import { useAuth } from '../context/AuthContext';
-import { FiArrowLeft, FiMapPin, FiClock, FiPhoneCall, FiMessageCircle, FiCheckCircle, FiInfo } from 'react-icons/fi';
+import { FiArrowLeft, FiMapPin, FiClock, FiPhoneCall, FiMessageCircle, FiCheckCircle, FiInfo, FiFlag, FiAlertTriangle, FiEdit2, FiX } from 'react-icons/fi';
 
 const BusinessProfileView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getBusinessById, getCategoryById, calculateDistance } = useMockData();
+  const { getBusinessById, getCategoryById, calculateDistance, getLandmarkById, flagBusiness } = useMockData();
   const { user } = useAuth();
+
+  const [showFlagSection, setShowFlagSection] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
 
   const business = getBusinessById(id);
 
@@ -23,7 +26,16 @@ const BusinessProfileView = () => {
   }
 
   const category = getCategoryById(business.categoryId);
-  const distance = calculateDistance(user.location, business.coordinates);
+  const landmark = getLandmarkById(business.landmarkId);
+  const isFlagged = business.flagCount >= 3;
+
+  const handleFlagSubmit = () => {
+    if (!flagReason) return;
+    flagBusiness(business.id, flagReason);
+    setShowFlagSection(false);
+    setFlagReason('');
+    alert('Thank you for reporting. The community has been alerted.');
+  };
 
   return (
     <div className="bg-[--background] min-h-screen pb-12">
@@ -55,7 +67,7 @@ const BusinessProfileView = () => {
             </h1>
             <div className="flex items-center gap-2 text-white/90 text-sm font-medium drop-shadow-sm">
               <FiMapPin />
-              <span>{distance} km from you</span>
+              <span>Near {landmark ? landmark.name : (business.address || 'Unknown')}</span>
               <span>•</span>
               <span>{business.locationType}</span>
             </div>
@@ -65,20 +77,57 @@ const BusinessProfileView = () => {
 
       <div className="container mt-6">
 
+        {isFlagged && (
+          <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '12px' }}>
+            <FiAlertTriangle style={{ color: 'var(--error)', flexShrink: 0, marginTop: '2px' }} size={22} />
+            <div>
+              <h3 style={{ fontWeight: 700, color: 'var(--error)' }}>Community Warning</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                This profile has been flagged {business.flagCount} times by residents for being inaccurate, nonsensical, or invalid.
+                Please exercise caution.
+              </p>
+              {business.flagReasons && business.flagReasons.length > 0 && (
+                <div style={{ marginTop: '8px', paddingLeft: '12px', borderLeft: '2px solid rgba(239,68,68,0.3)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  <strong>Reported reasons:</strong>
+                  <ul style={{ listStyleType: 'disc', paddingLeft: '16px', marginTop: '4px' }}>
+                    {[...new Set(business.flagReasons)].map((r, i) => <li key={i}>{r}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Status Actions */}
         <div className="flex gap-4 mb-6 sticky top-[70px] z-10 bg-[--background] py-2 border-b border-[--border]">
           <a href={`tel:${business.contact}`} className="flex-1 btn btn-primary flex justify-center py-4 text-base shadow-sm">
             <FiPhoneCall size={20} /> Call Now
           </a>
           {business.facebookUrl ? (
-            <a href={business.facebookUrl} target="_blank" rel="noreferrer" className="flex-1 btn btn-outline flex justify-center py-4 text-base bg-white">
+            <a href={business.facebookUrl} target="_blank" rel="noreferrer" className="flex-1 btn btn-outline flex justify-center py-4 text-base">
               <FiMessageCircle size={20} /> Message
             </a>
           ) : (
-            <button disabled className="flex-1 btn btn-outline opacity-50 cursor-not-allowed flex justify-center py-4 text-base bg-white">
+            <button disabled className="flex-1 btn btn-outline opacity-50 cursor-not-allowed flex justify-center py-4 text-base">
               <FiMessageCircle size={20} /> No FB
             </button>
           )}
+        </div>
+
+        {/* Community Actions Card */}
+        <div className="card flex justify-between items-center mb-6 shadow-sm">
+          <Link to={`/business/${business.id}/edit`} className="text-primary font-semibold flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <FiEdit2 /> Edit Profile
+          </Link>
+          <button
+            onClick={() => {
+              setShowFlagSection(true);
+              setTimeout(() => document.getElementById('flag-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            }}
+            className="text-danger font-semibold flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <FiFlag /> Flag Profile
+          </button>
         </div>
 
         {/* Info Grid */}
@@ -139,11 +188,11 @@ const BusinessProfileView = () => {
                 }}>
                 {/* Internal Mock Map Pin */}
                 <div className="absolute flex-col items-center transform -translate-x-1/2 -translate-y-full"
-                  style={{ left: `${business.coordinates.x}%`, top: `${business.coordinates.y}%` }}>
+                  style={{ left: `${landmark?.coordinates?.x || 50}%`, top: `${landmark?.coordinates?.y || 50}%` }}>
                   <div className="text-primary drop-shadow-md text-3xl">
                     <FiMapPin />
                   </div>
-                  <div className="bg-white text-xs font-bold px-2 py-1 rounded shadow-sm whitespace-nowrap -mt-1">
+                  <div className="text-xs font-bold px-2 py-1 rounded shadow-sm whitespace-nowrap -mt-1" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
                     {business.name}
                   </div>
                 </div>
@@ -156,6 +205,68 @@ const BusinessProfileView = () => {
 
         </div>
       </div>
+
+      {/* Flagging Section */}
+      {showFlagSection && (
+        <div id="flag-section" className="container mt-8 mb-12 animate-fade-in-up">
+          <div className="card border border-danger/20 shadow-sm relative">
+            <button
+              onClick={() => setShowFlagSection(false)}
+              className="absolute top-4 right-4 text-muted hover:text-primary transition-colors"
+            >
+              <FiX size={20} />
+            </button>
+            <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-danger">
+              <FiFlag /> Flag this profile
+            </h3>
+            <p className="text-sm text-secondary mb-4">
+              Help keep our community directory accurate. Why are you reporting this profile?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {['Fake or dummy profile', 'Location is inaccurate', 'Contact number is invalid', 'Business is permanently closed', 'Inappropriate content'].map(reason => (
+                <label
+                  key={reason}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                    border: `1px solid ${flagReason === reason ? 'rgba(239,68,68,0.4)' : 'var(--border-strong)'}`,
+                    background: flagReason === reason ? 'rgba(239,68,68,0.07)' : 'var(--bg-elevated)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="flagReason"
+                    value={reason}
+                    checked={flagReason === reason}
+                    onChange={(e) => setFlagReason(e.target.value)}
+                    style={{ width: '16px', height: '16px', accentColor: 'var(--error)', flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: '0.875rem', fontWeight: flagReason === reason ? 600 : 500, color: flagReason === reason ? 'var(--error)' : 'var(--text-primary)' }}>{reason}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button
+                disabled={!flagReason}
+                onClick={handleFlagSubmit}
+                className="btn bg-danger text-white flex-1 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Submit Report
+              </button>
+              <button
+                onClick={() => {
+                  setShowFlagSection(false);
+                  setFlagReason('');
+                }}
+                className="btn btn-outline flex-1 py-3"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
