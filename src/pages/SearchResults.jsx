@@ -51,7 +51,7 @@ const SearchResults = () => {
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [initialQuery, initialCategory, sortBy, businesses, user.location, calculateDistance]);
+  }, [initialQuery, initialCategory, sortBy, businesses, user.location, calculateDistance, getLandmarkById]);
 
   const handleSearch = (e) => {
     e.preventDefault();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMockData } from '../context/MockDataContext';
 import { useAuth } from '../context/AuthContext';
-import { FiNavigation, FiX, FiList } from 'react-icons/fi';
+import { FiX, FiList } from 'react-icons/fi';
 import BanayBanayMap from '../components/BanayBanayMap';
 
 const MapPage = () => {
