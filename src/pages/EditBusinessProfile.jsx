@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useMockData } from '../context/MockDataContext';
-import { FiSave, FiMapPin, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiSave, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 
 const EditBusinessProfile = () => {
   const { user } = useAuth();
@@ -55,12 +55,6 @@ const EditBusinessProfile = () => {
     });
   };
 
-  const handleMapClick = (e) => {
-    const bounds = e.currentTarget.getBoundingClientRect();
-    const x = Math.round(((e.clientX - bounds.left) / bounds.width) * 100);
-    const y = Math.round(((e.clientY - bounds.top) / bounds.height) * 100);
-    setFormData({ ...formData, coordinates: { x, y } });
-  };
 
   const isValid = formData.name.trim() !== '' && formData.landmarkId !== '' && (formData.contact.trim() !== '' || formData.services.trim() !== '');
 

@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useMockData } from '../context/MockDataContext';
-import { useAuth } from '../context/AuthContext';
 import { FiArrowLeft, FiMapPin, FiClock, FiPhoneCall, FiMessageCircle, FiCheckCircle, FiInfo, FiFlag, FiAlertTriangle, FiEdit2, FiX } from 'react-icons/fi';
 
 const BusinessProfileView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getBusinessById, getCategoryById, calculateDistance, getLandmarkById, flagBusiness } = useMockData();
-  const { user } = useAuth();
+  const { getBusinessById, getCategoryById, getLandmarkById, flagBusiness } = useMockData();
 
   const [showFlagSection, setShowFlagSection] = useState(false);
   const [flagReason, setFlagReason] = useState('');
