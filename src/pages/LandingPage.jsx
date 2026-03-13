@@ -43,9 +43,6 @@ const LandingPage = () => {
                         <Link to="/home" className="btn btn-primary btn-lg">
                             Explore Directory <FiArrowRight />
                         </Link>
-                        <Link to="/business/new" className="btn btn-secondary btn-lg">
-                            Add a Business
-                        </Link>
                     </div>
 
                     {/* Stats Row */}
@@ -293,9 +290,6 @@ const LandingPage = () => {
                             <div className="cta-buttons">
                                 <Link to="/home" className="btn btn-primary btn-lg">
                                     Start Discovering <FiArrowRight />
-                                </Link>
-                                <Link to="/business/new" className="btn btn-outline btn-lg">
-                                    Add Your Business
                                 </Link>
                             </div>
                         </div>

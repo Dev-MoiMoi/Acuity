@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { FiHome, FiSearch, FiMap, FiAlertTriangle, FiPlusCircle } from 'react-icons/fi';
+import { FiHome, FiSearch, FiMap, FiAlertTriangle } from 'react-icons/fi';
 import ThemeSwitch from './ThemeSwitch';
 import './Layout.css';
 
@@ -25,9 +25,6 @@ const Layout = () => {
 
                     <div className="desktop-actions flex items-center gap-4">
                         <ThemeSwitch />
-                        <Link to="/business/new" className="btn btn-primary" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <FiPlusCircle /> <span className="hidden-mobile">Add Business</span>
-                        </Link>
                     </div>
                 </div>
             </header>

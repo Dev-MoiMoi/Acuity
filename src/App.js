@@ -31,10 +31,9 @@ const AppRoutes = () => {
         <Route path="search" element={<SearchResults />} />
         <Route path="map" element={<MapPage />} />
 
-        {/* Business Profiles & Wiki Editing */}
+        {/* Business Profiles */}
         <Route path="business/:id" element={<BusinessProfileView />} />
         <Route path="business/:id/edit" element={<EditBusinessProfile />} />
-        <Route path="business/new" element={<EditBusinessProfile />} />
 
         {/* Transparency Feature */}
         <Route path="flagged" element={<FlaggedStores />} />

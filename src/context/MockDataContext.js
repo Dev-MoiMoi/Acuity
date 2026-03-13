@@ -154,19 +154,6 @@ export const MockDataProvider = ({ children }) => {
     const categories = CATEGORIES;
     const landmarks = LANDMARKS;
 
-    const addBusiness = (businessData) => {
-        const newBusiness = {
-            ...businessData,
-            id: `b${Date.now()}`,
-            isActive: true,
-            stats: { impressions: 0, inquiries: 0, created: new Date().toISOString().split('T')[0] },
-            flagCount: 0,
-            flagReasons: []
-        };
-        setBusinesses([...businesses, newBusiness]);
-        return newBusiness;
-    };
-
     const updateBusiness = (businessId, data) => {
         setBusinesses(businesses.map(b => b.id === businessId ? { ...b, ...data } : b));
     };
@@ -203,7 +190,6 @@ export const MockDataProvider = ({ children }) => {
         businesses,
         categories,
         landmarks,
-        addBusiness,
         updateBusiness,
         flagBusiness,
         getBusinessById,
